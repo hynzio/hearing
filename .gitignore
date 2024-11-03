@@ -1,10 +1,73 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# General ignores for Java projects
+*.class
+*.log
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
 
-### STS ###
+# Maven specific
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+# Maven Wrapper
+!.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IntelliJ IDEA specific
+.idea/
+*.iws
+*.iml
+*.ipr
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+.idea/**/contentModel.xml
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
+.idea/**/gradle.xml
+.idea/**/libraries
+.idea/**/mongoSettings.xml
+.idea/**/replstate.xml
+.idea/**/sonarlint/
+.idea/$CACHE_FILE$
+.idea/codestream.xml
+.idea/**/azureSettings.xml
+
+# NetBeans specific
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code specific
+.vscode/
+
+# STS (Spring Tool Suite) specific
 .apt_generated
 .classpath
 .factorypath
@@ -13,22 +76,61 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
+# Eclipse specific
+.project
+.classpath
+.settings/
+.apt_generated
+.factorypath
+
+# Windows specific
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+
+# File-based project format
 *.iws
-*.iml
+
+# Logs
+*.log
+
+# Other IDE generated files
 *.ipr
+*.iml
+.idea_modules/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
 
-### VS Code ###
-.vscode/
+# Android Studio serialized cache
+.idea/caches/build_file_checksums.ser
 
+# JIRA plugin
+atlassian-ide-plugin.xml
+
+# Markdown Navigator plugin
+.idea/**/markdown-navigator.xml
+.idea/**/markdown-navigator-enh.xml
+.idea/**/markdown-navigator/
+
+# Cursive Clojure plugin
+.idea/replstate.xml
