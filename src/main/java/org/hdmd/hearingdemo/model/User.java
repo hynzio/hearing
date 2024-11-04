@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -21,5 +22,20 @@ public class User {
 
     @Column(name = "app_token", nullable = false)
     private String fcmToken;
+
+    @Column(name = "password", nullable = false)
+    private String pwd;
+
+    @Column(name = "birth", nullable = false)
+    private LocalDate birth;
+
+    @Column(name = "rating", nullable = false)
+    private String rating;
+
+    @Column(name = "address", nullable = false)
+    private String address;
+
+    @Column(name = "range", nullable = false)
+    private int range;
 
 }
