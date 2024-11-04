@@ -13,9 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.util.Optional;
-import java.util.UUID;
-
+@CrossOrigin(origins = "*")
 @Tag(name = "기기관리", description = "기기 정보 관리 API")
 @RestController
 @RequestMapping("/api1/devices")

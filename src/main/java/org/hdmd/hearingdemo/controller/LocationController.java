@@ -1,25 +1,47 @@
 package org.hdmd.hearingdemo.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.hdmd.hearingdemo.dto.LocationDataDTO;
-import org.hdmd.hearingdemo.handler.WebsocketHandler;
+import org.hdmd.hearingdemo.handler.WebSocketHandler;
+import org.hdmd.hearingdemo.model.LocationData;
+import org.hdmd.hearingdemo.service.RaspberryPiCommandService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
-@RequiredArgsConstructor
-@RequestMapping("/api/location")
+@RequestMapping("/api1/location")
 public class LocationController {
 
-    private final WebsocketHandler websocketHandler;
+    @Autowired
+    private RaspberryPiCommandService raspberryPiCommandService;
 
-//    @PostMapping("/send")
-//    public ResponseEntity<Void> sendLocation(@RequestBody LocationDataDTO locationData) {
-//        // 핸들러를 통해 라즈베리파이로 위치 데이터 전송
-//        websocketHandler.receiveLocationData(locationData.getLocation());
-//        return ResponseEntity.ok().build();
-//    }
+    @Autowired
+    private WebSocketHandler locationWebSocketHandler;
+
+    @PostMapping("/connect")
+    public ResponseEntity<String> connect() {
+        try {
+            raspberryPiCommandService.sendStartCommand();
+            return ResponseEntity.ok("START 명령 전송 성공");
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("START 명령 전송 실패: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/disconnect")
+    public ResponseEntity<String> disconnect() {
+        try {
+            raspberryPiCommandService.sendStopCommand();
+            return ResponseEntity.ok("STOP 명령 전송 성공");
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("STOP 명령 전송 실패: " + e.getMessage());
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<String> receiveLocationData(@RequestBody LocationData locationData) throws IOException {
+        locationWebSocketHandler.broadcastLocationData(locationData);
+        return ResponseEntity.ok("위치 데이터 수신 및 브로드캐스트 성공");
+    }
 }
