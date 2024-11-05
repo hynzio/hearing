@@ -135,4 +135,5 @@ atlassian-ide-plugin.xml
 # Cursive Clojure plugin
 .idea/replstate.xml
 
+#appilcation properties
 application.properties
