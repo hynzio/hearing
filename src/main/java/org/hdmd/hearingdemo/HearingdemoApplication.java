@@ -9,5 +9,4 @@ public class HearingdemoApplication {
     public static void main(String[] args) {
         SpringApplication.run(HearingdemoApplication.class, args);
     }
-
 }

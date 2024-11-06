@@ -42,6 +42,6 @@ public class LocationController {
     @PostMapping
     public ResponseEntity<String> receiveLocationData(@RequestBody LocationData locationData) throws IOException {
         locationWebSocketHandler.broadcastLocationData(locationData);
-        return ResponseEntity.ok("위치 데이터 수신 및 브로드캐스트 성공");
+        return ResponseEntity.ok("위치 데이터 수신");
     }
 }

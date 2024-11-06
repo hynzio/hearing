@@ -39,7 +39,7 @@ public class Device {
 
     @Column(name = "device_status", nullable = false)
     @Schema(description = "단말기 상태")
-    private boolean status; //0(false)=귀가, 1(true)=외출
+    private Boolean status; //0(false)=귀가, 1(true)=외출
 
     @JsonManagedReference
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
