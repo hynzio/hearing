@@ -36,12 +36,6 @@ public class RecordingService {
     private final S3Client s3Client;
     private final NotificationService notificationService;
 
-//    @Value("${clova.secretKey}")
-//    String secretKey;
-//
-//    @Value("${clova.invokeUrl}")
-//    String invokeUrl;
-
     @Value("${ai.api.url}")
     String aiUrl;
 
@@ -49,14 +43,16 @@ public class RecordingService {
         // 받은 데이터 DB에 저장
         RecordingDownloadDTO downloadDTO = uploadRecording(recordingDTO);
         File downloadedFile = downloadRecording(downloadDTO.getFilepath());
-            updateRecordingStatus(downloadDTO.getRecordingId(), "처리 중");
+        updateRecordingStatus(downloadDTO.getRecordingId(), "처리 중");
+
+        // STT 결과를 받아옴
         Map<String, Object> sttResult = clovaSpeechClient.soundToText(downloadedFile);
+
+        // AI 분석 후 위험 문장 분석
         List<String> analyzeResult = aiService.analyzeTextForDanger(sttResult);
         updateRecordingStatus(downloadDTO.getRecordingId(), "AI 검토 완료");
 
-
-        // 4. 위험 알림 전송 (필요 시)
-
+        // 녹음 파일 조회
         Recording recording = recordingRepository.findById(downloadDTO.getRecordingId()).orElse(null);
         if (recording == null) {
             recording = new Recording();
@@ -69,21 +65,22 @@ public class RecordingService {
             recording.setStatus("검토 대기"); // 기본 상태 설정
         }
 
+        // AI 분석 결과가 있다면
         if (!analyzeResult.isEmpty()) {
             updateRecordingReview(downloadDTO.getRecordingId(), true);
-            recording.setText(analyzeResult);
+            recording.setText(analyzeResult);  // 위험 문장을 저장
             recordingRepository.save(recording);
             // 위험 알림 전송
             notificationService.sendDangerNotification(downloadDTO.getRecordingId());
-
         } else {
-            // 위험하지 않은 경우 Recording.aiReview: false로 저장
+            // 위험하지 않은 경우
             updateRecordingReview(downloadDTO.getRecordingId(), false);
             updateRecordingStatus(downloadDTO.getRecordingId(), "위험상황 종료");
         }
 
-        // 5. 임시 파일 삭제
+        // 임시 파일 삭제
         deleteTempFile(downloadedFile);
+
         return recording;
     }
 
@@ -128,7 +125,7 @@ public class RecordingService {
 
     public File downloadRecording(String filepath){
         String fileName = "recording_" + System.currentTimeMillis() + ".mp3"; // 파일 이름 생성
-        String downloadDir = "C:/Users/jh377/Downloads";
+        String downloadDir = "/home/ubuntu/downloads";
         File downloadedFile = new File(downloadDir, fileName);
 
         String bucketName = extractBucketName(filepath);
@@ -271,7 +268,6 @@ public class RecordingService {
 
         } catch (TransactionSystemException e) {
             throw new RuntimeException("트랜잭션 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
-
         } catch (Exception e) {
             // 기타 예외 처리
             throw new RuntimeException("데이터 상태 업데이트 중 서버 오류가 발생했습니다: " + e.getMessage(), e);

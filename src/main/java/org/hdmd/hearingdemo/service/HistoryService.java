@@ -49,7 +49,6 @@ public class HistoryService {
                     historyMap.put("id", history.getId());
                     historyMap.put("timestamp", history.getTimestamp());
                     historyMap.put("location", history.getLocation());
-                    historyMap.put("filepath", history.getFilepath());
                     historyMap.put("text", history.getText());
                     return historyMap;
                 })

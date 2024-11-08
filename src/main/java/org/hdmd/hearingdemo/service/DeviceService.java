@@ -81,7 +81,7 @@ public class DeviceService {
                     .orElseThrow(() -> new DeviceNotFoundException("단말기를 찾을 수 없습니다."));
             device.setStatus(newStatus);
             deviceRepository.save(device);
-            //notificationService.sendExitOrReturnNotification(newStatus);
+            notificationService.sendExitOrReturnNotification(newStatus);
 
         } catch (TransactionSystemException e) {
             throw new RuntimeException("트랜잭션 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
@@ -100,5 +100,7 @@ public class DeviceService {
 //        deviceRepository.deleteById(id);
 //
 //    }
+
+
 
 }

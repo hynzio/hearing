@@ -1,11 +1,13 @@
 package org.hdmd.hearingdemo.model;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -17,6 +19,7 @@ import java.util.List;
 @Schema(description = "녹음파일 엔티티")
 @Table(name = "recording")
 public class Recording {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "recording_id", nullable = false)
@@ -56,16 +59,40 @@ public class Recording {
     @Schema(description = "AI 판단 위험여부")
     private boolean aiReview = false;
 
-    @Column @Schema(description = "사용자 판단 위험여부")
+    @Column
+    @Schema(description = "사용자 판단 위험여부")
     private boolean userReview = false;
 
-    public List getTextAsList() throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(text, List.class);
+    // text 필드를 List<String>으로 반환
+    public List<String> getTextAsList() {
+        if (this.text == null || this.text.isEmpty()) {
+            return new ArrayList<>();  // 빈 리스트 반환
+        }
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(this.text, List.class);
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
 
-    public void setText(List<String> sentenses) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        this.text = objectMapper.writeValueAsString(sentenses);
+    // List<String>을 text 필드에 설정
+    public void setText(List<String> sentences) throws Exception {
+        if (sentences == null || sentences.isEmpty()) {
+            this.text = "null";  // 빈 리스트를 "null"로 설정
+        } else {
+            ObjectMapper objectMapper = new ObjectMapper();
+            this.text = objectMapper.writeValueAsString(sentences);
+        }
+    }
+
+    // JSON 응답시 text를 String으로 반환
+    @JsonGetter("text")
+    public String getTextAsString() {
+        List<String> sentences = getTextAsList();
+        if (sentences.isEmpty()) {
+            return "null";
+        }
+        return String.join(", ", sentences);  // 문장을 쉼표로 연결하여 반환
     }
 }

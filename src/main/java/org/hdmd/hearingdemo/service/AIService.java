@@ -1,7 +1,6 @@
 package org.hdmd.hearingdemo.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -30,6 +29,7 @@ public class AIService {
         this.restTemplate = restTemplateBuilder.build();
     }
 
+    // AI 분석 후 위험 문장을 List<String>으로 반환
     public List<String> analyzeTextForDanger(Map<String, Object> sttResult) throws JsonProcessingException {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -57,8 +57,6 @@ public class AIService {
 
                     if ("danger".equals(prediction) && !dangerousSentences.contains(dangerousText)) {
                         dangerousSentences.add(dangerousText);  // 위험 문장 저장
-
-
                     }
                 }
             }
