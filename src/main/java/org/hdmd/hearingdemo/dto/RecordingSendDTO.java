@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RecordingSendDTO {
-    public Long RecordingId;
+    public Long recordingId;
     public String location;
     public boolean isDangerous;
 }
