@@ -73,7 +73,6 @@ public class LocationController {
         try {
             // 위치 데이터 안드로이드와 라즈베리 파이에 전송
             androidWebSocketHandler.sendLocationToAndroid(locationData);
-            raspberryWebSocketHandler.broadcastLocationData(locationData);
             return ResponseEntity.ok("위치 데이터 전송 완료");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("위치 데이터 전송 실패: " + e.getMessage());
