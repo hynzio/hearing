@@ -20,7 +20,7 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     // 알림 읽음 처리
-    @PostMapping("/{notificationId}/read")
+    @PutMapping("/{notificationId}/read")
     @Operation(
             summary = "알림 읽음 처리",
             description = "해당하는 알림 읽음처리")

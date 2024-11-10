@@ -63,26 +63,26 @@ public class Recording {
     @Schema(description = "사용자 판단 위험여부")
     private boolean userReview = false;
 
-    // text 필드를 List<String>으로 반환
-    public List<String> getTextAsList() {
-        if (this.text == null || this.text.isEmpty()) {
-            return new ArrayList<>();  // 빈 리스트 반환
-        }
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(this.text, List.class);
-        } catch (Exception e) {
-            return new ArrayList<>();
-        }
-    }
-
     // List<String>을 text 필드에 설정
     public void setText(List<String> sentences) throws Exception {
         if (sentences == null || sentences.isEmpty()) {
-            this.text = "null";  // 빈 리스트를 "null"로 설정
+            this.text = "[]";  // 빈 리스트를 빈 JSON 배열로 설정
         } else {
             ObjectMapper objectMapper = new ObjectMapper();
-            this.text = objectMapper.writeValueAsString(sentences);
+            this.text = objectMapper.writeValueAsString(sentences);  // List를 JSON 배열로 변환
+        }
+    }
+
+    // 텍스트를 List<String>으로 변환
+    public List<String> getTextAsList() {
+        if (this.text == null || this.text.isEmpty()) {
+            return new ArrayList<>();  // 빈 문자열이거나 null이면 빈 리스트 반환
+        }
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(this.text, List.class);  // JSON 배열을 List<String>으로 변환
+        } catch (Exception e) {
+            return new ArrayList<>();  // 예외가 발생하면 빈 리스트 반환
         }
     }
 
@@ -91,7 +91,7 @@ public class Recording {
     public String getTextAsString() {
         List<String> sentences = getTextAsList();
         if (sentences.isEmpty()) {
-            return "null";
+            return "";  // 빈 리스트일 경우 빈 문자열 반환
         }
         return String.join(", ", sentences);  // 문장을 쉼표로 연결하여 반환
     }
