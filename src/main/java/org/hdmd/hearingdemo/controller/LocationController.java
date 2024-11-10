@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.hdmd.hearingdemo.handler.WebSocketHandler;
 import org.hdmd.hearingdemo.model.LocationData;
+import org.hdmd.hearingdemo.service.MqttCommandSender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,16 +20,24 @@ public class LocationController {
     @Autowired
     private WebSocketHandler locationWebSocketHandler;
 
+    @Autowired
+    private MqttCommandSender mqttCommandSender;
+
     @PostMapping("/connect")
     @Operation(
             summary = "웹소켓 연결",
             description = "실시간 위치 확인을 위한 웹소켓 통신 연결",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "성공적으로 조회됨"),
-                    @ApiResponse(responseCode = "404", description = "존재하지 않는 데이터"),
-                    @ApiResponse(responseCode = "500", description = "서버 오류")})
+                    @ApiResponse(responseCode = "200", description = "성공적으로 연결됨"),
+                    @ApiResponse(responseCode = "500", description = "서버 오류")
+            })
     public ResponseEntity<String> connect() {
-        return ResponseEntity.ok("웹소켓 연결됨");
+        try {
+            mqttCommandSender.sendStartCommand();
+            return ResponseEntity.ok("웹소켓 및 MQTT 연결 성공");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("연결 중 오류 발생: " + e.getMessage());
+        }
     }
 
     @PostMapping("/disconnect")
@@ -36,11 +45,16 @@ public class LocationController {
             summary = "연결 종료",
             description = "GPS화면 웹소켓 연결 종료",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "성공적으로 조회됨"),
-                    @ApiResponse(responseCode = "404", description = "존재하지 않는 데이터"),
-                    @ApiResponse(responseCode = "500", description = "서버 오류")})
+                    @ApiResponse(responseCode = "200", description = "성공적으로 연결 종료"),
+                    @ApiResponse(responseCode = "500", description = "서버 오류")
+            })
     public ResponseEntity<String> disconnect() {
-        return ResponseEntity.ok("웹소켓 연결 종료됨");
+        try {
+            mqttCommandSender.sendStopCommand();
+            return ResponseEntity.ok("웹소켓 및 MQTT 연결 종료됨");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("연결 종료 중 오류 발생: " + e.getMessage());
+        }
     }
 
     @PostMapping
@@ -48,11 +62,11 @@ public class LocationController {
             summary = "GPS값 업데이트",
             description = "실시간 위치값 전송",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "성공적으로 조회됨"),
-                    @ApiResponse(responseCode = "404", description = "존재하지 않는 데이터"),
-                    @ApiResponse(responseCode = "500", description = "서버 오류")})
-    public ResponseEntity<String> receiveLocationData(@RequestBody LocationData locationData) throws IOException {
+                    @ApiResponse(responseCode = "200", description = "위치 데이터 수신"),
+                    @ApiResponse(responseCode = "500", description = "서버 오류")
+            })
+    public ResponseEntity<String> receiveLocationData(@RequestBody LocationData locationData) {
         locationWebSocketHandler.broadcastLocationData(locationData);
-        return ResponseEntity.ok("위치 데이터 수신");
+        return ResponseEntity.ok("위치 데이터 수신 및 전송 성공");
     }
 }

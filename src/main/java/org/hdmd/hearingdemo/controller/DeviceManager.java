@@ -57,7 +57,7 @@ public class DeviceManager {
     @Operation(summary = "기기 상태 업데이트", description = "외출 여부를 저장함")
     @PutMapping("device/{id}/status")
     @Parameter(name = "deviceStatus", description = "0이면 귀가, 1이면 외출")
-    public ResponseEntity<String> updateDeviceStatus(@PathVariable Long id, @RequestParam Boolean deviceStatus) {
+    public ResponseEntity<String> updateDeviceStatus(@PathVariable Long id, @RequestBody Boolean deviceStatus) {
         deviceService.updateDeviceStatus(id, deviceStatus);
         return ResponseEntity.ok("외출 상태가 업데이트되었습니다.");
     }

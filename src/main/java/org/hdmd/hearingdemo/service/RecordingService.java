@@ -62,12 +62,12 @@ public class RecordingService {
             recording.setTimestamp(uploadDTO.getTimestamp());
             recording.setLatitude(uploadDTO.getLatitude());
             recording.setLongitude(uploadDTO.getLongitude());
-            recording.setStatus("검토 대기"); // 기본 상태 설정
         }
 
         if (!analyzeResult.isEmpty()) {
             updateRecordingReview(downloadDTO.getRecordingId(), true);
-            recording.setText(analyzeResult);  // 위험 문장을 저장
+            recording.setText(analyzeResult); // 위험 문장을 저장
+            recording.setStatus("위험 감지");
             recordingRepository.save(recording);
             // 위험 알림 전송
             notificationService.sendDangerNotification(downloadDTO.getRecordingId());
