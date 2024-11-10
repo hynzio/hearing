@@ -1,8 +1,7 @@
 package org.hdmd.hearingdemo.handler;
 
+import lombok.Data;
 import org.hdmd.hearingdemo.model.LocationData;
-import org.hdmd.hearingdemo.service.MqttCommandSender;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -14,46 +13,92 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
-    private final ConcurrentHashMap<String, WebSocketSession> sessionMap = new ConcurrentHashMap<>();
+    private String clientType;  // 필드로 설정
 
-    @Autowired
-    private MqttCommandSender mqttCommandSender;
+    private final ConcurrentHashMap<String, WebSocketSession> androidSessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, WebSocketSession> raspberrySessions = new ConcurrentHashMap<>();
+
+    // 기본 생성자
+    public WebSocketHandler() {
+        this.clientType = "DEFAULT";  // 기본 값 설정 (필요시 수정)
+    }
+
+    // clientType을 설정하는 setter 메서드
+    public void setClientType(String clientType) {
+        this.clientType = clientType;
+    }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        sessionMap.put(session.getId(), session);
-        System.out.println("Android 클라이언트 연결됨: " + session.getId());
+        // clientType을 session의 속성으로 설정하고 연결 처리
+        session.getAttributes().put("clientType", clientType);
+        if ("ANDROID".equals(clientType)) {
+            androidSessions.put(session.getId(), session);
+            System.out.println("Android 클라이언트 연결됨: " + session.getId());
+        } else if ("RASPBERRY".equals(clientType)) {
+            raspberrySessions.put(session.getId(), session);
+            System.out.println("Raspberry Pi 클라이언트 연결됨: " + session.getId());
+        }
+    }
 
-        // MQTT로 라즈베리파이에 start 명령 전송
-        mqttCommandSender.sendStartCommand();
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+        String clientType = (String) session.getAttributes().get("clientType");
+
+        if ("RASPBERRY".equals(clientType)) {
+            String payload = message.getPayload();
+            System.out.println("Received from Raspberry Pi: " + payload);
+
+            // 라즈베리 파이에서 수신한 메시지를 안드로이드 클라이언트에 브로드캐스트
+            androidSessions.values().forEach(androidSession -> {
+                if (androidSession.isOpen()) {
+                    try {
+                        androidSession.sendMessage(new TextMessage(payload));
+                    } catch (Exception e) {
+                        System.err.println("위치 데이터 전송 오류: " + e.getMessage());
+                    }
+                }
+            });
+        }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        sessionMap.remove(session.getId());
-        System.out.println("Android 클라이언트 연결 종료됨: " + session.getId());
+        String clientType = (String) session.getAttributes().get("clientType");
 
-        // MQTT로 라즈베리파이에 stop 명령 전송
-        mqttCommandSender.sendStopCommand();
+        if ("ANDROID".equals(clientType)) {
+            androidSessions.remove(session.getId());
+            System.out.println("Android 클라이언트 연결 종료됨: " + session.getId());
+        } else if ("RASPBERRY".equals(clientType)) {
+            raspberrySessions.remove(session.getId());
+            System.out.println("Raspberry Pi 클라이언트 연결 종료됨: " + session.getId());
+        }
     }
 
+    // 안드로이드 세션으로 위치 데이터 브로드캐스트
     public void broadcastLocationData(LocationData locationData) {
-        String locationMessage = String.format(""" 
-        {
-            "latitude": %8f,
-            "longitude": %8f,
-            "timestamp": "%s"
-        }
-        """, locationData.getLatitude(), locationData.getLongitude(), locationData.getTimestamp());
+        String locationJson = String.format("{\"latitude\": \"%f\", \"longitude\": \"%f\", \"timestamp\": \"%s\"}",
+                locationData.getLatitude(), locationData.getLongitude(), locationData.getTimestamp());
 
-        sessionMap.values().forEach(session -> {
-            if (session.isOpen()) {
+        androidSessions.values().forEach(androidSession -> {
+            if (androidSession.isOpen()) {
                 try {
-                    session.sendMessage(new TextMessage(locationMessage));
+                    androidSession.sendMessage(new TextMessage(locationJson));
                 } catch (Exception e) {
-                    System.err.println("위치 데이터 전송 오류: " + e.getMessage());
+                    System.err.println("위치 데이터 전송 중 오류: " + e.getMessage());
                 }
             }
         });
+    }
+
+    public void closeCurrentSession() {
+        raspberrySessions.values().forEach(session -> {
+            try {
+                session.close();
+            } catch (Exception e) {
+                System.err.println("라즈베리 세션 종료 중 오류: " + e.getMessage());
+            }
+        });
+        raspberrySessions.clear();
     }
 }

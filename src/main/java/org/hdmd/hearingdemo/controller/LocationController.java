@@ -10,15 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-
 @Tag(name = "실시간 위치", description = "단말기 현재위치 확인")
 @RestController
 @RequestMapping("/api1/location")
 public class LocationController {
 
     @Autowired
-    private WebSocketHandler locationWebSocketHandler;
+    private WebSocketHandler webSocketHandler;  // 하나의 핸들러로 통합
 
     @Autowired
     private MqttCommandSender mqttCommandSender;
@@ -33,6 +31,7 @@ public class LocationController {
             })
     public ResponseEntity<String> connect() {
         try {
+            // 안드로이드 연결 시 라즈베리 파이에 시작 명령 전송
             mqttCommandSender.sendStartCommand();
             return ResponseEntity.ok("웹소켓 및 MQTT 연결 성공");
         } catch (Exception e) {
@@ -50,6 +49,8 @@ public class LocationController {
             })
     public ResponseEntity<String> disconnect() {
         try {
+            // 안드로이드 연결 종료 시 라즈베리 파이 세션 종료 및 정지 명령 전송
+            webSocketHandler.closeCurrentSession();  // 라즈베리 파이 세션 종료
             mqttCommandSender.sendStopCommand();
             return ResponseEntity.ok("웹소켓 및 MQTT 연결 종료됨");
         } catch (Exception e) {
@@ -66,7 +67,7 @@ public class LocationController {
                     @ApiResponse(responseCode = "500", description = "서버 오류")
             })
     public ResponseEntity<String> receiveLocationData(@RequestBody LocationData locationData) {
-        locationWebSocketHandler.broadcastLocationData(locationData);
+        webSocketHandler.broadcastLocationData(locationData);
         return ResponseEntity.ok("위치 데이터 수신 및 전송 성공");
     }
 }
