@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.*;
 public class LocationController {
 
     @Autowired
-    private WebSocketHandler webSocketHandler;  // 하나의 핸들러로 통합
+    private WebSocketHandler androidWebSocketHandler;  // 안드로이드 WebSocketHandler
+
+    @Autowired
+    private WebSocketHandler raspberryWebSocketHandler;  // 라즈베리 파이 WebSocketHandler
 
     @Autowired
     private MqttCommandSender mqttCommandSender;
@@ -50,7 +53,7 @@ public class LocationController {
     public ResponseEntity<String> disconnect() {
         try {
             // 안드로이드 연결 종료 시 라즈베리 파이 세션 종료 및 정지 명령 전송
-            webSocketHandler.closeRaspberrySessions();  // 라즈베리 파이 세션 종료
+            raspberryWebSocketHandler.closeSessions();  // 라즈베리 파이 세션 종료
             mqttCommandSender.sendStopCommand();
             return ResponseEntity.ok("웹소켓 및 MQTT 연결 종료됨");
         } catch (Exception e) {
@@ -66,9 +69,14 @@ public class LocationController {
                     @ApiResponse(responseCode = "200", description = "위치 데이터 수신"),
                     @ApiResponse(responseCode = "500", description = "서버 오류")
             })
-    public ResponseEntity<String> receiveLocationData(@RequestBody LocationData locationData) {
-        // 위치 데이터를 안드로이드 세션에 전달
-        webSocketHandler.broadcastLocationData(locationData);
-        return ResponseEntity.ok("위치 데이터 수신 및 전송 성공");
+    public ResponseEntity<String> sendLocationData(@RequestBody LocationData locationData) {
+        try {
+            // 위치 데이터 안드로이드와 라즈베리 파이에 전송
+            androidWebSocketHandler.sendLocationToAndroid(locationData);
+            raspberryWebSocketHandler.broadcastLocationData(locationData);
+            return ResponseEntity.ok("위치 데이터 전송 완료");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("위치 데이터 전송 실패: " + e.getMessage());
+        }
     }
 }

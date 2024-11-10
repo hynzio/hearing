@@ -1,99 +1,118 @@
 package org.hdmd.hearingdemo.handler;
 
-import org.hdmd.hearingdemo.model.LocationData;
-import org.springframework.stereotype.Component;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
+import lombok.Setter;
+import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
+import java.util.HashSet;
+import java.util.Set;
 
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
-    private final String clientType;
-    private final ConcurrentHashMap<String, WebSocketSession> androidSessions = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, WebSocketSession> raspberrySessions = new ConcurrentHashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketHandler.class);
+    // clientType을 설정하는 메소드
+    @Setter
+    private String clientType;
+    private final Set<WebSocketSession> androidSessions = new HashSet<>();  // 안드로이드 세션 관리
+    private final Set<WebSocketSession> raspberrySessions = new HashSet<>();  // 라즈베리 파이 세션 관리
 
-    public WebSocketHandler(String clientType) {
-        this.clientType = clientType;
+    @PostConstruct
+    public void init() {
+        // WebSocketHandler의 초기화 작업
+        logger.info("WebSocketHandler 초기화됨");
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
-        session.getAttributes().put("clientType", clientType);
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+        logger.info("{} 연결됨: {}", clientType, session.getId());
 
-        // 클라이언트 타입에 따라 세션을 관리
+        // 클라이언트 타입에 따라 세션 저장
         if ("ANDROID".equals(clientType)) {
-            androidSessions.put(session.getId(), session);
-            System.out.println("Android 클라이언트 연결됨: " + session.getId());
+            androidSessions.add(session);
         } else if ("RASPBERRY".equals(clientType)) {
-            raspberrySessions.put(session.getId(), session);
-            System.out.println("Raspberry Pi 클라이언트 연결됨: " + session.getId());
+            raspberrySessions.add(session);
         }
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-        String clientType = (String) session.getAttributes().get("clientType");
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        logger.info("{}로부터 메시지 받음: {}", clientType, message.getPayload());
 
-        // Raspberry Pi로부터 받은 데이터를 Android로 브로드캐스트
+        // 메시지 처리 로직 추가
+        if ("ANDROID".equals(clientType)) {
+            // 안드로이드 클라이언트에서 처리할 메시지 로직
+        } else if ("RASPBERRY".equals(clientType)) {
+            // 라즈베리 파이 클라이언트에서 처리할 메시지 로직
+        }
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        logger.info("{} 연결 종료됨: {}", clientType, session.getId());
+
+        // 클라이언트 타입에 따라 세션 제거
+        if ("ANDROID".equals(clientType)) {
+            androidSessions.remove(session);
+        } else if ("RASPBERRY".equals(clientType)) {
+            raspberrySessions.remove(session);
+        }
+    }
+
+    // 위치 데이터 방송
+    public void broadcastLocationData(Object locationData) {
+        // 라즈베리 파이 세션에만 위치 데이터 전송
         if ("RASPBERRY".equals(clientType)) {
-            String payload = message.getPayload();
-            System.out.println("Received from Raspberry Pi: " + payload);
-
-            androidSessions.values().forEach(androidSession -> {
-                if (androidSession.isOpen()) {
+            for (WebSocketSession session : raspberrySessions) {
+                if (session.isOpen()) {
                     try {
-                        androidSession.sendMessage(new TextMessage(payload));
+                        session.sendMessage(new TextMessage(locationData.toString()));
                     } catch (Exception e) {
-                        System.err.println("위치 데이터 전송 오류: " + e.getMessage());
+                        logger.error("위치 데이터 전송 실패", e);
                     }
                 }
-            });
+            }
         }
     }
 
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        String clientType = (String) session.getAttributes().get("clientType");
-
-        // 클라이언트 타입에 따라 세션을 관리
+    // 안드로이드 세션에 위치 데이터 전송
+    public void sendLocationToAndroid(Object locationData) {
         if ("ANDROID".equals(clientType)) {
-            androidSessions.remove(session.getId());
-            System.out.println("Android 클라이언트 연결 종료됨: " + session.getId());
-        } else if ("RASPBERRY".equals(clientType)) {
-            raspberrySessions.remove(session.getId());
-            System.out.println("Raspberry Pi 클라이언트 연결 종료됨: " + session.getId());
-        }
-    }
-
-    // 안드로이드 세션으로 위치 데이터 브로드캐스트
-    public void broadcastLocationData(LocationData locationData) {
-        String locationJson = String.format("{\"latitude\": \"%f\", \"longitude\": \"%f\", \"timestamp\": \"%s\"}",
-                locationData.getLatitude(), locationData.getLongitude(), locationData.getTimestamp());
-
-        androidSessions.values().forEach(androidSession -> {
-            if (androidSession.isOpen()) {
-                try {
-                    androidSession.sendMessage(new TextMessage(locationJson));
-                } catch (Exception e) {
-                    System.err.println("위치 데이터 전송 중 오류: " + e.getMessage());
+            for (WebSocketSession session : androidSessions) {
+                if (session.isOpen()) {
+                    try {
+                        session.sendMessage(new TextMessage(locationData.toString()));
+                    } catch (Exception e) {
+                        logger.error("위치 데이터 전송 실패", e);
+                    }
                 }
             }
-        });
+        }
     }
 
-    // 현재 Raspberry Pi 세션 종료
-    public void closeRaspberrySessions() {
-        raspberrySessions.values().forEach(session -> {
-            try {
-                session.close();
-            } catch (Exception e) {
-                System.err.println("Raspberry 세션 종료 중 오류: " + e.getMessage());
+    // 세션을 종료시키는 메소드
+    public void closeSessions() {
+        if ("ANDROID".equals(clientType)) {
+            for (WebSocketSession session : androidSessions) {
+                try {
+                    session.close();
+                } catch (Exception e) {
+                    logger.error("세션 종료 실패", e);
+                }
             }
-        });
-        raspberrySessions.clear();
+        } else if ("RASPBERRY".equals(clientType)) {
+            for (WebSocketSession session : raspberrySessions) {
+                try {
+                    session.close();
+                } catch (Exception e) {
+                    logger.error("세션 종료 실패", e);
+                }
+            }
+        }
     }
+
 }
