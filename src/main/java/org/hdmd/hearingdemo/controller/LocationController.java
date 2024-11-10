@@ -52,8 +52,11 @@ public class LocationController {
             })
     public ResponseEntity<String> disconnect() {
         try {
-            // 안드로이드 연결 종료 시 라즈베리 파이 세션 종료 및 정지 명령 전송
-            raspberryWebSocketHandler.closeSessions();  // 라즈베리 파이 세션 종료
+            // 안드로이드 연결 종료
+            androidWebSocketHandler.disconnectAndroidSession();
+            // 라즈베리 파이 세션 종료
+            raspberryWebSocketHandler.disconnectRaspberrySession();
+            // 라즈베리 파이에 정지 명령 전송
             mqttCommandSender.sendStopCommand();
             return ResponseEntity.ok("웹소켓 및 MQTT 연결 종료됨");
         } catch (Exception e) {

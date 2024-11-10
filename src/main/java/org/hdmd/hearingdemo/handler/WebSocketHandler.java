@@ -17,6 +17,7 @@ import java.util.Set;
 public class WebSocketHandler extends TextWebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketHandler.class);
+
     @Setter
     private String clientType;
     private final Set<WebSocketSession> androidSessions = new HashSet<>();  // 안드로이드 세션 관리
@@ -36,7 +37,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         if ("ANDROID".equals(clientType)) {
             androidSessions.add(session);
         } else if ("RASPBERRY".equals(clientType)) {
-            raspberrySessions.add(session);  // 라즈베리 파이 세션 저장
+            raspberrySessions.add(session);
         }
     }
 
@@ -62,10 +63,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         if ("ANDROID".equals(clientType)) {
             androidSessions.remove(session);
-            // 안드로이드 세션 종료 시 라즈베리 파이 세션도 종료
-            closeRaspberrySession(session);
         } else if ("RASPBERRY".equals(clientType)) {
-            raspberrySessions.remove(session); // 라즈베리 파이 세션 종료
+            raspberrySessions.remove(session);
         }
     }
 
@@ -84,16 +83,27 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    // 안드로이드 세션 종료 시 라즈베리 파이 세션도 종료
-    private void closeRaspberrySession(WebSocketSession androidSession) {
-        for (WebSocketSession raspberrySession : raspberrySessions) {
+    // 안드로이드 세션 종료
+    public void disconnectAndroidSession() {
+        for (WebSocketSession session : androidSessions) {
             try {
-                // 라즈베리 파이 세션 종료
-                raspberrySession.close(CloseStatus.NORMAL);
-                logger.info("라즈베리 파이 세션 종료됨: {}", raspberrySession.getId());
+                session.close();
+            } catch (Exception e) {
+                logger.error("안드로이드 세션 종료 실패", e);
+            }
+        }
+        androidSessions.clear();
+    }
+
+    // 라즈베리 파이 세션 종료
+    public void disconnectRaspberrySession() {
+        for (WebSocketSession session : raspberrySessions) {
+            try {
+                session.close();
             } catch (Exception e) {
                 logger.error("라즈베리 파이 세션 종료 실패", e);
             }
         }
+        raspberrySessions.clear();
     }
 }
