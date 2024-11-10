@@ -1,6 +1,7 @@
 package org.hdmd.hearingdemo.handler;
 
 import lombok.Data;
+import lombok.Setter;
 import org.hdmd.hearingdemo.model.LocationData;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -13,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
+    // clientType을 설정하는 setter 메서드
+    @Setter
     private String clientType;  // 필드로 설정
 
     private final ConcurrentHashMap<String, WebSocketSession> androidSessions = new ConcurrentHashMap<>();
@@ -21,11 +24,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
     // 기본 생성자
     public WebSocketHandler() {
         this.clientType = "DEFAULT";  // 기본 값 설정 (필요시 수정)
-    }
-
-    // clientType을 설정하는 setter 메서드
-    public void setClientType(String clientType) {
-        this.clientType = clientType;
     }
 
     @Override
