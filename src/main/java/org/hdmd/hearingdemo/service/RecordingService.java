@@ -124,7 +124,7 @@ public class RecordingService {
 
     public File downloadRecording(String filepath){
         String fileName = "recording_" + System.currentTimeMillis() + ".mp3"; // 파일 이름 생성
-        String downloadDir = "C:/Users/jh377/Downloads/";
+        String downloadDir = "/home/ubuntu/downloads";
         File downloadedFile = new File(downloadDir, fileName);
 
         String bucketName = extractBucketName(filepath);
