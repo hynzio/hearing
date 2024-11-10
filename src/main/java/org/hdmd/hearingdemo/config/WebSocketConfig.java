@@ -13,21 +13,20 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Bean
     public WebSocketHandler androidWebSocketHandler() {
-        WebSocketHandler handler = new WebSocketHandler();
-        handler.setClientType("ANDROID");  // clientType 설정
-        return handler;
+        return new WebSocketHandler("ANDROID");  // 클라이언트 타입을 "ANDROID"로 설정
     }
 
     @Bean
     public WebSocketHandler raspberryWebSocketHandler() {
-        WebSocketHandler handler = new WebSocketHandler();
-        handler.setClientType("RASPBERRY");  // clientType 설정
-        return handler;
+        return new WebSocketHandler("RASPBERRY");  // 클라이언트 타입을 "RASPBERRY"로 설정
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        // 안드로이드 클라이언트에 대해 엔드포인트 등록
         registry.addHandler(androidWebSocketHandler(), "/demo").setAllowedOrigins("*");
+
+        // 라즈베리 파이 클라이언트에 대해 다른 엔드포인트 등록
         registry.addHandler(raspberryWebSocketHandler(), "/demo/location").setAllowedOrigins("*");
     }
 }
