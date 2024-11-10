@@ -1,23 +1,38 @@
 package org.hdmd.hearingdemo.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.hdmd.hearingdemo.service.NotificationManager;
+import org.hdmd.hearingdemo.service.NotificationService;
+import org.hdmd.hearingdemo.service.NotificationStatus;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "알림 읽음 처리", description =  "위험상황 감지 알림 읽음처리 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/notifications")
-class NotificationController {
 
-    private final NotificationManager notificationManager;
+public class NotificationController {
 
-    @PostMapping("/{notificationId}")
+    private final NotificationService notificationService;
+
+    // 알림 읽음 처리
+    @PostMapping("/{notificationId}/read")
+    @Operation(
+            summary = "알림 읽음 처리",
+            description = "해당하는 알림 읽음처리")
     public ResponseEntity<String> markAsRead(@PathVariable String notificationId) {
-        notificationManager.markAsRead(notificationId);
-        return ResponseEntity.ok("Notification marked as read");
+        try {
+            // 알림 읽음 처리
+            notificationService.markAsRead(notificationId);
+            return ResponseEntity.ok("알림 읽음 처리 완료");
+        } catch (IllegalArgumentException e) {
+            // 알림이 없을 경우 404 반환
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(notificationId + "에 해당하는 알림이 존재하지 않습니다.");
+        }
     }
 }

@@ -46,7 +46,7 @@ public class HistoryService {
         return histories.stream()
                 .map(history -> {
                     Map<String, Object> historyMap = new HashMap<>();
-                    historyMap.put("id", history.getId());
+                    historyMap.put("historyId", history.getId());
                     historyMap.put("timestamp", history.getTimestamp());
                     historyMap.put("location", history.getLocation());
                     historyMap.put("text", history.getText());

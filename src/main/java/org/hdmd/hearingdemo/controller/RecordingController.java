@@ -2,8 +2,8 @@ package org.hdmd.hearingdemo.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.hdmd.hearingdemo.dto.RecordingDTO;
 import org.hdmd.hearingdemo.dto.RecordingSendDTO;
+import org.hdmd.hearingdemo.dto.UploadDTO;
 import org.hdmd.hearingdemo.model.Recording;
 import org.hdmd.hearingdemo.service.RecordingService;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +32,7 @@ public class RecordingController {
                     @ApiResponse(responseCode = "200", description = "성공적으로 업로드됨"),
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 파일"),
                     @ApiResponse(responseCode = "500", description = "서버 오류")})
-    public Recording processRecording(@RequestBody RecordingDTO uploadDTO) throws Exception {
+    public Recording processRecording(@RequestBody UploadDTO uploadDTO) throws Exception {
         Recording recording = recordingService.processRecording(uploadDTO);
         return ResponseEntity.ok(recording).getBody();
     }

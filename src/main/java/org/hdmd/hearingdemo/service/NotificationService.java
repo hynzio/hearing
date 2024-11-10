@@ -1,12 +1,14 @@
 package org.hdmd.hearingdemo.service;
 
-
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +23,7 @@ public class NotificationService {
 
     // 위험 알림 전송 메서드
     public void sendDangerNotification(Long recordingId) {
-        String notificationId = NotificationManager.createNotification(); // 알림 ID 생성
+        String notificationId = NotificationManager.createNotification();
 
         // FCM 메시지 빌더
         Message message = createMessageForDangerNotification(recordingId, notificationId);
@@ -36,14 +38,24 @@ public class NotificationService {
 
         // 5분마다 읽음 상태 확인 및 재전송
         executor.scheduleAtFixedRate(() -> {
-            NotificationStatus status = NotificationManager.getStatus(notificationId);
-            if (status != null && !status.isRead() && status.getResendCount() < 3) {
-                resendDangerNotification(message, status);
+            try {
+                NotificationStatus status = NotificationManager.getStatus(notificationId);
+                if (status != null && !status.isRead() && status.getResendCount() < 3) {
+                    resendDangerNotification(message, status);
+                }
+            } catch (ResponseStatusException e) {
+                // 알림이 없을 경우 예외 처리
+                System.out.println("Notification not found, stopping resend attempts.");
             }
         }, 5, 5, TimeUnit.MINUTES);
     }
 
     private Message createMessageForDangerNotification(Long recordingId, String notificationId) {
+        // 현재 시간 생성 및 포맷
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String formattedTimestamp = now.format(formatter);
+
         return Message.builder()
                 .setToken(token)
                 .setNotification(Notification.builder()
@@ -52,6 +64,7 @@ public class NotificationService {
                         .build())
                 .putData("recordingId", String.valueOf(recordingId))
                 .putData("notificationId", notificationId)
+                .putData("timestamp", formattedTimestamp)
                 .build();
     }
 
@@ -59,7 +72,7 @@ public class NotificationService {
         try {
             String resendResponse = FirebaseMessaging.getInstance().send(message);
             System.out.println("Resending danger notification: " + resendResponse);
-            status.incrementResendCount(); // 재전송 횟수 증가
+            status.incrementResendCount();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -67,8 +80,8 @@ public class NotificationService {
 
     // 외출/귀가 알림 전송 메서드
     public void sendExitOrReturnNotification(Boolean newStatus) {
-        String alertTitle = newStatus ? "귀가 알림" : "외출 알림";
-        String alertBody = newStatus ? "귀가가 감지되었습니다." : "외출이 감지되었습니다.";
+        String alertTitle = newStatus ? "외출 알림" : "귀가 알림";
+        String alertBody = newStatus ? "외출이 감지되었습니다." : "귀가가 감지되었습니다.";
 
         Message message = Message.builder()
                 .setToken(token)
@@ -85,5 +98,13 @@ public class NotificationService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void markAsRead(String notificationId) {
+        NotificationStatus status = NotificationManager.getStatus(notificationId);
+        if (status == null) {
+            throw new IllegalArgumentException("Notification with id " + notificationId + " not found.");
+        }
+        status.setRead(true);
     }
 }

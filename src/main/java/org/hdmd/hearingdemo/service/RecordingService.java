@@ -39,9 +39,9 @@ public class RecordingService {
     @Value("${ai.api.url}")
     String aiUrl;
 
-    public Recording processRecording(RecordingDTO recordingDTO) throws Exception {
+    public Recording processRecording(UploadDTO uploadDTO) throws Exception {
         // 받은 데이터 DB에 저장
-        RecordingDownloadDTO downloadDTO = uploadRecording(recordingDTO);
+        RecordingDownloadDTO downloadDTO = uploadRecording(uploadDTO);
         File downloadedFile = downloadRecording(downloadDTO.getFilepath());
         updateRecordingStatus(downloadDTO.getRecordingId(), "처리 중");
 
@@ -58,14 +58,13 @@ public class RecordingService {
             recording = new Recording();
             // 새로운 Recording 객체 초기화 (새로운 녹음 데이터 저장)
             recording.setDevice(deviceRepository.findById(recording.getDevice().getId()).orElseThrow(() -> new RuntimeException("Device not found")));
-            recording.setFilepath(recordingDTO.getFilepath());
-            recording.setTimestamp(recordingDTO.getTimestamp());
-            recording.setLatitude(recordingDTO.getLatitude());
-            recording.setLongitude(recordingDTO.getLongitude());
+            recording.setFilepath(downloadDTO.getFilepath());
+            recording.setTimestamp(uploadDTO.getTimestamp());
+            recording.setLatitude(uploadDTO.getLatitude());
+            recording.setLongitude(uploadDTO.getLongitude());
             recording.setStatus("검토 대기"); // 기본 상태 설정
         }
 
-        // AI 분석 결과가 있다면
         if (!analyzeResult.isEmpty()) {
             updateRecordingReview(downloadDTO.getRecordingId(), true);
             recording.setText(analyzeResult);  // 위험 문장을 저장
@@ -85,7 +84,7 @@ public class RecordingService {
     }
 
     //추출된 메타데이터 엔티티로 저장
-    public RecordingDownloadDTO uploadRecording(RecordingDTO uploadDTO) {
+    public RecordingDownloadDTO uploadRecording(UploadDTO uploadDTO) {
         RecordingDownloadDTO downloadDTO;
         try {
             // Recording 엔티티에 메타데이터 저장
@@ -125,7 +124,7 @@ public class RecordingService {
 
     public File downloadRecording(String filepath){
         String fileName = "recording_" + System.currentTimeMillis() + ".mp3"; // 파일 이름 생성
-        String downloadDir = "/home/ubuntu/downloads";
+        String downloadDir = "C:/Users/jh377/Downloads/";
         File downloadedFile = new File(downloadDir, fileName);
 
         String bucketName = extractBucketName(filepath);
