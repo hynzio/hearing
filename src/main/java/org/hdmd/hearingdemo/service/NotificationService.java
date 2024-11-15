@@ -31,7 +31,7 @@ public class NotificationService {
         // 메시지 전송
         try {
             String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Successfully sent danger notification: " + response);
+            System.out.println("위험 알림이 전송되었습니다: " + response);
         } catch (Exception e) {
             e.printStackTrace();
         }
