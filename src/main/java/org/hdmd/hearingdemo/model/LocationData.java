@@ -11,4 +11,6 @@ public class LocationData {
     private double latitude;
     private double longitude;
     private String timestamp;
+    private String action;
+    private String clientId;
 }

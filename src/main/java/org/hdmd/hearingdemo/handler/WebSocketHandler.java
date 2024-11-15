@@ -1,109 +1,74 @@
 package org.hdmd.hearingdemo.handler;
 
-import jakarta.annotation.PostConstruct;
-import lombok.Setter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hdmd.hearingdemo.model.LocationData;
-import org.springframework.web.socket.*;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
-import org.springframework.stereotype.Component;
+import org.hdmd.hearingdemo.service.MqttCommandSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-@Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketHandler.class);
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private final MqttCommandSender mqttCommandSender;
 
-    @Setter
-    private String clientType;
-    private final Set<WebSocketSession> androidSessions = new HashSet<>();  // 안드로이드 세션 관리
-    private final Set<WebSocketSession> raspberrySessions = new HashSet<>();  // 라즈베리 파이 세션 관리
-    private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파싱용 ObjectMapper
-
-    // WebSocketHandler 초기화 작업
-    @PostConstruct
-    public void init() {
-        logger.info("WebSocketHandler 초기화됨");
+    public WebSocketHandler(MqttCommandSender mqttCommandSender) {
+        this.mqttCommandSender = mqttCommandSender;
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        logger.info("{} 연결됨: {}", clientType, session.getId());
+        String clientId = (String) session.getAttributes().get("clientId");
 
-        if ("ANDROID".equals(clientType)) {
-            androidSessions.add(session);
-        } else if ("RASPBERRY".equals(clientType)) {
-            raspberrySessions.add(session);
+        if (clientId != null) {
+            sessions.put(clientId, session);  // 클라이언트 아이디를 키로 세션 등록
+
+            if ("ANDROID".equals(clientId)) {
+                mqttCommandSender.sendStartCommand();  // 안드로이드 세션 연결 시 MQTT로 라즈베리파이에 start 명령 전송
+            }
+
+            logger.info("WebSocket 연결 성공: {}", clientId);
+        } else {
+            logger.error("클라이언트 아이디가 설정되지 않았습니다.");
+            session.close(CloseStatus.BAD_DATA);  // 클라이언트 아이디가 없으면 연결 종료
         }
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        // 라즈베리 파이로부터 받은 위치 데이터 처리
-        if ("RASPBERRY".equals(clientType)) {
-            String payload = message.getPayload();
-            logger.info("라즈베리 파이로부터 위치 데이터 받음: {}", payload);
+        String payload = message.getPayload();
+        LocationData messageData = objectMapper.readValue(payload, LocationData.class);  // 한 번만 파싱
 
-            // JSON 파싱하여 LocationData 객체로 변환
-            LocationData locationData = objectMapper.readValue(payload, LocationData.class);
-            logger.info("파싱된 위치 데이터: {}", locationData);
+        String action = messageData.getAction();
+        String clientId = messageData.getClientId();
 
-            // 안드로이드 세션에 위치 데이터 전송
-            sendLocationToAndroid(locationData);
+        if ("sendLocation".equals(action) && "RASPBERRY".equals(clientId)) {
+            logger.info("라즈베리파이 위치 데이터 수신: {}", messageData);
+
+            WebSocketSession androidSession = sessions.get("ANDROID");
+            if (androidSession != null && androidSession.isOpen()) {
+                androidSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(messageData)));
+            }
         }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        logger.info("{} 연결 종료됨: {}", clientType, session.getId());
+        String clientId = (String) session.getAttributes().get("clientId");
 
-        if ("ANDROID".equals(clientType)) {
-            androidSessions.remove(session);
-        } else if ("RASPBERRY".equals(clientType)) {
-            raspberrySessions.remove(session);
-        }
-    }
-
-    // 안드로이드 세션에 위치 데이터 전송
-    public void sendLocationToAndroid(LocationData locationData) {
-        if ("ANDROID".equals(clientType)) {
-            for (WebSocketSession session : androidSessions) {
-                if (session.isOpen()) {
-                    try {
-                        session.sendMessage(new TextMessage(locationData.toString()));
-                    } catch (Exception e) {
-                        logger.error("위치 데이터 전송 실패", e);
-                    }
-                }
+        if (clientId != null) {
+            if ("ANDROID".equals(clientId)) {
+                mqttCommandSender.sendStopCommand();
             }
+            sessions.remove(clientId);
+            logger.info("WebSocket 연결 종료: {}", clientId);
         }
-    }
-
-    // 안드로이드 세션 종료
-    public void disconnectAndroidSession() {
-        for (WebSocketSession session : androidSessions) {
-            try {
-                session.close();
-            } catch (Exception e) {
-                logger.error("안드로이드 세션 종료 실패", e);
-            }
-        }
-        androidSessions.clear();
-    }
-
-    // 라즈베리 파이 세션 종료
-    public void disconnectRaspberrySession() {
-        for (WebSocketSession session : raspberrySessions) {
-            try {
-                session.close();
-            } catch (Exception e) {
-                logger.error("라즈베리 파이 세션 종료 실패", e);
-            }
-        }
-        raspberrySessions.clear();
     }
 }

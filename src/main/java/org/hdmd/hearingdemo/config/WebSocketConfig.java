@@ -1,8 +1,9 @@
 package org.hdmd.hearingdemo.config;
-
-import org.hdmd.hearingdemo.handler.WebSocketHandler;
+import org.hdmd.hearingdemo.service.MqttCommandSender;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
@@ -11,23 +12,17 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    @Bean
-    public WebSocketHandler androidWebSocketHandler() {
-        WebSocketHandler handler = new WebSocketHandler();
-        handler.setClientType("ANDROID");  // 안드로이드 타입 설정
-        return handler;
-    }
+    private final MqttCommandSender mqttCommandSender;
 
-    @Bean
-    public WebSocketHandler raspberryWebSocketHandler() {
-        WebSocketHandler handler = new WebSocketHandler();
-        handler.setClientType("RASPBERRY");  // 라즈베리 파이 타입 설정
-        return handler;
+    // MqttCommandSender는 스프링 빈으로 자동 주입됩니다.
+    @Autowired
+    public WebSocketConfig(MqttCommandSender mqttCommandSender) {
+        this.mqttCommandSender = mqttCommandSender;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(androidWebSocketHandler(), "/demo").setAllowedOrigins("*");
-        registry.addHandler(raspberryWebSocketHandler(), "/demo/location").setAllowedOrigins("*");
+        WebSocketHandler handler = new org.hdmd.hearingdemo.handler.WebSocketHandler(mqttCommandSender);
+        registry.addHandler(handler, "/demo").setAllowedOrigins("*");
     }
 }
