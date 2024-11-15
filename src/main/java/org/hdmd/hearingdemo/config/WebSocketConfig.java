@@ -1,7 +1,6 @@
 package org.hdmd.hearingdemo.config;
 import org.hdmd.hearingdemo.service.MqttCommandSender;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -14,7 +13,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final MqttCommandSender mqttCommandSender;
 
-    // MqttCommandSender는 스프링 빈으로 자동 주입됩니다.
     @Autowired
     public WebSocketConfig(MqttCommandSender mqttCommandSender) {
         this.mqttCommandSender = mqttCommandSender;
