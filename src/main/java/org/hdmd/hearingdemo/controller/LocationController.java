@@ -9,11 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
-@RequestMapping("location")
+@RequestMapping("/location")
 public class LocationController {
 
     private static final Logger logger = LoggerFactory.getLogger(LocationController.class);
