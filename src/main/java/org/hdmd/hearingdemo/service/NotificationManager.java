@@ -26,14 +26,6 @@ public class NotificationManager {
         return notificationId;
     }
 
-    // 알림 읽음 상태 업데이트
-    public static void markAsRead(String notificationId) {
-        NotificationStatus status = notifications.get(notificationId);
-        if (status != null) {
-            status.setRead(true);
-        }
-    }
-
     // 알림 상태 조회
     public static NotificationStatus getStatus(String notificationId) {
         return notifications.get(notificationId);
