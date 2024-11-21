@@ -36,8 +36,7 @@ public class HistoryController {
         return ResponseEntity.ok(historyDTO);
 
 
-    }
-
+    }   
     @GetMapping("/device/{deviceId}")
     @Operation(
             summary = "특정 단말기의 기록 모두 조회",
