@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Entity @Data
@@ -56,20 +57,20 @@ public class History {
     // 텍스트를 List<String>으로 변환
     public String getTextAsList() {
         if (this.text == null || this.text.isEmpty()) {
-            return new ArrayList<>();  // 빈 문자열이거나 null이면 빈sp 리스트 반환
+            return String.valueOf(new ArrayList<>());  // 빈 문자열이거나 null이면 빈sp 리스트 반환
         }
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(this.text, List.class);  // JSON 배열을 List<String>으로 변환
+            return objectMapper.readValue(this.text, List.class).toString();  // JSON 배열을 List<String>으로 변환
         } catch (Exception e) {
-            return new ArrayList<>();  // 예외가 발생하면 빈 리스트 반환
+            return String.valueOf(new ArrayList<>());  // 예외가 발생하면 빈 리스트 반환
         }
     }
 
     // JSON 응답시 text를 String으로 반환
     @JsonGetter("text")
     public String getTextAsString() {
-        List<String> sentences = getTextAsList();
+        List<String> sentences = Collections.singletonList(getTextAsList());
         if (sentences.isEmpty()) {
             return "";  // 빈 리스트일 경우 빈 문자열 반환
         }
