@@ -30,7 +30,7 @@ public class HistoryService {
         historyDTO.setTimestamp(history.getTimestamp());
         historyDTO.setFilepath(history.getFilepath());
         historyDTO.setLocation(history.getLocation());
-        historyDTO.setText(history.getTextAsList());
+        historyDTO.setText(history.getText());
         historyDTO.setDevice(history.getDevice().getDeviceName( ));
 
         return historyDTO;
