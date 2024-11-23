@@ -48,6 +48,14 @@ public class RecordingService {
         // STT 결과를 받아옴
         Map<String, Object> sttResult = clovaSpeechClient.soundToText(downloadedFile);
 
+        List<String> sentences = (List<String>) sttResult.get("sentences");
+        if (sentences == null || sentences.isEmpty()) {
+            updateRecordingStatus(downloadDTO.getRecordingId(), "STT 결과 없음");
+            // 임시 파일 삭제
+            deleteTempFile(downloadedFile);
+            return null; // 프로세스를 종료
+        }
+
         // AI 분석 후 위험 문장 분석
         List<String> analyzeResult = aiService.analyzeTextForDanger(sttResult);
         updateRecordingStatus(downloadDTO.getRecordingId(), "AI 검토 완료");
@@ -74,7 +82,7 @@ public class RecordingService {
         } else {
             // 위험하지 않은 경우
             updateRecordingReview(downloadDTO.getRecordingId(), false);
-            updateRecordingStatus(downloadDTO.getRecordingId(), "위험상황 종료");
+            updateRecordingStatus(downloadDTO.getRecordingId(), "삭제 기");
         }
 
         // 임시 파일 삭제
