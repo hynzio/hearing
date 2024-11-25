@@ -71,7 +71,7 @@ public class NotificationService {
     private void resendDangerNotification(Message message, NotificationStatus status) {
         try {
             String resendResponse = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Resending danger notification: " + resendResponse);
+            System.out.println("읽지 않은 알림 재전송됨: " + resendResponse);
             status.incrementResendCount();
         } catch (Exception e) {
             e.printStackTrace();
