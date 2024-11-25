@@ -82,7 +82,7 @@ public class RecordingService {
         } else {
             // 위험하지 않은 경우
             updateRecordingReview(downloadDTO.getRecordingId(), false);
-            updateRecordingStatus(downloadDTO.getRecordingId(), "삭제 기");
+            updateRecordingStatus(downloadDTO.getRecordingId(),     "삭제 대기");
         }
 
         // 임시 파일 삭제
